@@ -1,3 +1,6 @@
 [submodule "Drivers/st7789"]
 	path = Drivers/st7789
 	url = https://github.com/ArmDeveloperEcosystem/st7789-library-for-pico.git
+[submodule "Middlewares/FreeRTOS-Kernel"]
+	path = Middlewares/FreeRTOS-Kernel
+	url = https://github.com/FreeRTOS/FreeRTOS-Kernel.git

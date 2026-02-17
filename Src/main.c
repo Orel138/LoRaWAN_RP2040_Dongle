@@ -10,6 +10,11 @@
 
 #include "hardware/gpio.h"
 
+// FreeRTOS
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+
 #define TFT_SPI_PORT spi1
 
 // LCD configuration
@@ -40,6 +45,7 @@ const int LCD_HEIGHT = 320;
 #define UART_RX_PIN 5
 
 static char event_str[128];
+static QueueHandle_t gpio_event_queue;
 
 void gpio_event_string(char *buf, uint32_t events);
 
@@ -48,6 +54,27 @@ void gpio_callback(uint gpio, uint32_t events) {
     // so we can print it
     gpio_event_string(event_str, events);
     printf("GPIO %d %s\n", gpio, event_str);
+}
+
+void lcd_task(void *params) {
+    while (1) {
+        int rand_x = rand() % LCD_WIDTH;
+        int rand_y = rand() % LCD_HEIGHT;
+        uint16_t rand_color = rand() % 0xffff;
+        
+        st7789_set_cursor(rand_x, rand_y);
+        
+        st7789_put(rand_color);
+        
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+}
+
+void uart_task(void *params) {
+    while (1) {
+        printf("Hello, world!\n");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }
 
 int main()
@@ -82,20 +109,13 @@ int main()
 
     printf("GPIO %d initial state: %d\n", GPIO_WATCH_PIN2, gpio_get(GPIO_WATCH_PIN2));
 
+    xTaskCreate(lcd_task, "LCD_Task", 256, NULL, 1, NULL);
+    xTaskCreate(uart_task, "UART_Task", 256, NULL, 1, NULL);
+
+    vTaskStartScheduler();
+
     while (true) {
-        printf("Hello, world!\n");
-        sleep_ms(1000);
 
-        // create a random x, y, and color value
-        int rand_x = rand() % LCD_WIDTH;
-        int rand_y = rand() % LCD_HEIGHT;
-        uint16_t rand_color = rand() % 0xffff;
-        
-        // move the cursor to the random x and y position
-        st7789_set_cursor(rand_x, rand_y);
-
-        // put the random color as the pixel value
-        st7789_put(rand_color);
     }
 }
 

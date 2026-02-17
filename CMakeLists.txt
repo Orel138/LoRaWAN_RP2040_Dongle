@@ -35,6 +35,15 @@ project(LoRaWAN_RP2040_Dongle C CXX ASM)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
+# Set FreeRTOS kernel path
+set(FREERTOS_KERNEL_PATH ${CMAKE_CURRENT_LIST_DIR}/Middlewares/FreeRTOS-Kernel)
+
+# Optional: make it visible in cache (useful for GUI or debugging)
+set(FREERTOS_KERNEL_PATH ${FREERTOS_KERNEL_PATH} CACHE PATH "Path to FreeRTOS Kernel")
+
+# Import FreeRTOS-Kernel
+include(FreeRTOS_Kernel_import.cmake)
+
 # Add executable. Default name is the project name, version 0.1
 add_executable(LoRaWAN_RP2040_Dongle
     Src/main.c
@@ -45,6 +54,8 @@ add_executable(LoRaWAN_RP2040_Dongle
 target_link_libraries(LoRaWAN_RP2040_Dongle
     pico_stdlib
     hardware_spi
+    FreeRTOS-Kernel
+    FreeRTOS-Kernel-Heap4
 )
 
 # Include directories
