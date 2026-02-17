@@ -48,12 +48,17 @@ include(FreeRTOS_Kernel_import.cmake)
 add_executable(LoRaWAN_RP2040_Dongle
     Src/main.c
     Drivers/st7789/src/st7789.c
+    Src/cli_main.c
+    Src/cli_uart_drv.c
+    Src/cli_commands.c
 )
 
 # Add the standard library to the build
 target_link_libraries(LoRaWAN_RP2040_Dongle
     pico_stdlib
     hardware_spi
+    hardware_uart
+    hardware_irq
     FreeRTOS-Kernel
     FreeRTOS-Kernel-Heap4
 )

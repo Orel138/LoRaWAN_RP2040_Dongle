@@ -3,6 +3,8 @@
 #include <stdio.h>
 
 #include "hardware/uart.h"
+#include "hardware/timer.h"
+#include "hardware/watchdog.h"
 
 #include <stdlib.h>          // for rand()
 #include "pico/stdlib.h"
@@ -14,6 +16,9 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
+
+// CLI
+#include "cli.h"
 
 #define TFT_SPI_PORT spi1
 
@@ -47,6 +52,8 @@ const int LCD_HEIGHT = 320;
 static char event_str[128];
 static QueueHandle_t gpio_event_queue;
 
+static uint32_t ulHighFrequencyTimerTicks = 0;
+
 void gpio_event_string(char *buf, uint32_t events);
 
 void gpio_callback(uint gpio, uint32_t events) {
@@ -66,20 +73,37 @@ void lcd_task(void *params) {
         
         st7789_put(rand_color);
         
-        vTaskDelay(pdMS_TO_TICKS(100));
+        vTaskDelay(pdMS_TO_TICKS(1));
     }
 }
 
-void uart_task(void *params) {
-    while (1) {
-        printf("Hello, world!\n");
-        vTaskDelay(pdMS_TO_TICKS(1000));
+// void uart_task(void *params) {
+//     while (1) {
+//         printf("Hello, world!\n");
+//         vTaskDelay(pdMS_TO_TICKS(1000));
+//     }
+// }
+
+void watchdog_task(void *params)
+{
+    while(1)
+    {
+        // Afficher l'état des tâches toutes les 5 secondes
+        printf("\n=== System Status ===\n");
+        printf("Free heap: %u bytes\n", xPortGetFreeHeapSize());
+        printf("Tasks running: %u\n", uxTaskGetNumberOfTasks());
+        
+        vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }
 
 int main()
 {
+    // Initialiser stdio en premier
     stdio_init_all();
+
+    // Délai pour stabiliser USB CDC
+    sleep_ms(2000);
 
     gpio_init(GPIO_WATCH_PIN2);
     gpio_set_dir(GPIO_WATCH_PIN2, GPIO_IN);
@@ -98,6 +122,7 @@ int main()
 
     // make screen black
     st7789_fill(0x0000);
+    printf("LCD initialized\n");
     
     // Use some the various UART functions to send out data
     // In a default system, printf will also output via the default UART
@@ -109,11 +134,30 @@ int main()
 
     printf("GPIO %d initial state: %d\n", GPIO_WATCH_PIN2, gpio_get(GPIO_WATCH_PIN2));
 
-    xTaskCreate(lcd_task, "LCD_Task", 256, NULL, 1, NULL);
-    xTaskCreate(uart_task, "UART_Task", 256, NULL, 1, NULL);
+    printf("Free heap before task creation: %u bytes\n", xPortGetFreeHeapSize());
+    
+    BaseType_t xResult;
 
+    xResult = xTaskCreate(lcd_task, "LCD_Task", 512, NULL, 1, NULL);
+    if(xResult != pdPASS)
+    {
+        printf("ERROR: Failed to create LCD task\n");
+    }
+
+    // xTaskCreate(uart_task, "UART_Task", 256, NULL, 1, NULL);
+
+    xResult = xTaskCreate(Task_CLI, "CLI_Task", 768, NULL, 1, NULL);
+    if(xResult != pdPASS)
+    {
+        printf("ERROR: Failed to create CLI task\n");
+    }
+
+    xResult = xTaskCreate(watchdog_task, "Watchdog", 256, NULL, 1, NULL);
+
+    printf("Starting FreeRTOS scheduler...\n");
     vTaskStartScheduler();
 
+    printf("ERROR: Scheduler failed to start!\n");
     while (true) {
 
     }
@@ -145,4 +189,63 @@ void gpio_event_string(char *buf, uint32_t events) {
         }
     }
     *buf++ = '\0';
+}
+
+#if (configCHECK_FOR_STACK_OVERFLOW > 0)
+void vApplicationStackOverflowHook(TaskHandle_t xTask, char *pcTaskName)
+{
+    // Désactiver les interruptions pour éviter d'autres problèmes
+    taskDISABLE_INTERRUPTS();
+    
+    printf("\n\n!!! STACK OVERFLOW DETECTED !!!\n");
+    printf("Task: %s\n", pcTaskName);
+    printf("Handle: %p\n", xTask);
+    
+    // Afficher l'état de la heap
+    printf("Free heap: %u bytes\n", xPortGetFreeHeapSize());
+    
+    // Bloquer ici
+    while(1)
+    {
+        tight_loop_contents();
+    }
+}
+#endif
+
+void vApplicationMallocFailedHook(void)
+{
+    taskDISABLE_INTERRUPTS();
+    
+    printf("\n\n!!! MALLOC FAILED !!!\n");
+    printf("Out of heap memory!\n");
+    printf("Free heap: %u bytes\n", xPortGetFreeHeapSize());
+    
+    while(1)
+    {
+        tight_loop_contents();
+    }
+}
+
+// Idle hook pour détecter si le système tourne
+void vApplicationIdleHook(void)
+{
+    static uint32_t ulIdleCount = 0;
+    ulIdleCount++;
+    
+    // Toutes les 100000 itérations, clignoter la LED intégrée si disponible
+    if((ulIdleCount % 100000) == 0)
+    {
+        // Optionnel : toggle LED pour indiquer que le système tourne
+        // gpio_put(PICO_DEFAULT_LED_PIN, !gpio_get(PICO_DEFAULT_LED_PIN));
+    }
+}
+
+void vConfigureTimerForRunTimeStats(void)
+{
+    ulHighFrequencyTimerTicks = 0;
+}
+
+uint32_t ulGetRunTimeCounterValue(void)
+{
+    return time_us_32() / 100;  // Retourne en centièmes de microsecondes
 }

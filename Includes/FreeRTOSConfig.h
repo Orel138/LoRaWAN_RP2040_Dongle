@@ -1,6 +1,8 @@
 #ifndef FREERTOS_CONFIG_H
 #define FREERTOS_CONFIG_H
 
+#include <stdio.h>
+
 /*-----------------------------------------------------------
  * Application specific definitions for RP2040
  *----------------------------------------------------------*/
@@ -8,7 +10,7 @@
 /* Scheduler Related */
 #define configUSE_PREEMPTION                    1
 #define configUSE_TICKLESS_IDLE                 0
-#define configUSE_IDLE_HOOK                     0
+#define configUSE_IDLE_HOOK                     1
 #define configUSE_TICK_HOOK                     0
 #define configTICK_RATE_HZ                      ( ( TickType_t ) 1000 )
 #define configMAX_PRIORITIES                    32
@@ -35,18 +37,18 @@
 /* Memory allocation related definitions. */
 #define configSUPPORT_STATIC_ALLOCATION         0
 #define configSUPPORT_DYNAMIC_ALLOCATION        1
-#define configTOTAL_HEAP_SIZE                   (64*1024)
+#define configTOTAL_HEAP_SIZE                   (128*1024)
 #define configAPPLICATION_ALLOCATED_HEAP        0
 
 /* Hook function related definitions. */
-#define configCHECK_FOR_STACK_OVERFLOW          0
+#define configCHECK_FOR_STACK_OVERFLOW          2
 #define configUSE_MALLOC_FAILED_HOOK            0
 #define configUSE_DAEMON_TASK_STARTUP_HOOK      0
 
 /* Run time and task stats gathering related definitions. */
-#define configGENERATE_RUN_TIME_STATS           0
+#define configGENERATE_RUN_TIME_STATS           1
 #define configUSE_TRACE_FACILITY                1
-#define configUSE_STATS_FORMATTING_FUNCTIONS    0
+#define configUSE_STATS_FORMATTING_FUNCTIONS    1
 
 /* Co-routine related definitions. */
 #define configUSE_CO_ROUTINES                   0
@@ -72,7 +74,10 @@
 
 #include <assert.h>
 /* Define to trap errors during development. */
-#define configASSERT(x)                         assert(x)
+#define configASSERT(x) if((x) == 0) { \
+    printf("ASSERT FAILED at %s:%d\n", __FILE__, __LINE__); \
+    while(1) { tight_loop_contents(); } \
+}
 
 /* Set the following definitions to 1 to include the API function, or zero
 to exclude the API function. */
@@ -92,5 +97,10 @@ to exclude the API function. */
 #define INCLUDE_xTaskGetHandle                  1
 #define INCLUDE_xTaskResumeFromISR              1
 #define INCLUDE_xQueueGetMutexHolder            1
+
+extern void vConfigureTimerForRunTimeStats(void);
+extern uint32_t ulGetRunTimeCounterValue(void);
+#define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS() vConfigureTimerForRunTimeStats()
+#define portGET_RUN_TIME_COUNTER_VALUE() ulGetRunTimeCounterValue()
 
 #endif /* FREERTOS_CONFIG_H */
