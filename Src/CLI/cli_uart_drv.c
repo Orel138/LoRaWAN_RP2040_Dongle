@@ -15,13 +15,6 @@
 /* UART Configuration - utilise USB CDC par défaut via stdio */
 #define USE_USB_CDC  1  // Set to 1 to use USB CDC, 0 to use hardware UART
 
-#if !USE_USB_CDC
-#define UART_ID uart1
-#define UART_TX_PIN 4
-#define UART_RX_PIN 5
-#define BAUD_RATE 115200
-#endif
-
 static SemaphoreHandle_t xUartTxSem = NULL;
 static volatile BaseType_t xPartialCommand = pdFALSE;
 
@@ -38,22 +31,6 @@ static TaskHandle_t xTxThreadHandle = NULL;
 
 static void vTxThread(void *pvParameters);
 static void vRxThread(void *pvParameters);
-
-#if !USE_USB_CDC
-/* UART RX IRQ Handler */
-static void uart_rx_irq_handler(void)
-{
-    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
-    
-    while(uart_is_readable(UART_ID))
-    {
-        char c = uart_getc(UART_ID);
-        xStreamBufferSendFromISR(xUartRxStream, &c, 1, &xHigherPriorityTaskWoken);
-    }
-    
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
-}
-#endif
 
 BaseType_t xInitConsoleUart(void)
 {
@@ -283,7 +260,6 @@ static int32_t uart_readline(char ** const ppcInputBuffer)
             {
                 case '\n':
                 case '\r':
-                case '\00':
                     if(ulInBufferIdx > 0)
                     {
                         pcInputBuffer[ulInBufferIdx] = '\0';

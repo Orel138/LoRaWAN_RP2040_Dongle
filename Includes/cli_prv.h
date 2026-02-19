@@ -45,5 +45,14 @@ extern const CLI_Command_Definition_t xCommandDef_ps;
 extern const CLI_Command_Definition_t xCommandDef_heapStat;
 extern const CLI_Command_Definition_t xCommandDef_reset;
 extern const CLI_Command_Definition_t xCommandDef_clear;
+extern const CLI_Command_Definition_t xCommandDef_uptime;
+
+/* RAK3172 commands */
+extern const CLI_Command_Definition_t xCommandDef_rakVersion;
+extern const CLI_Command_Definition_t xCommandDef_rakConfig;
+extern const CLI_Command_Definition_t xCommandDef_rakJoin;
+extern const CLI_Command_Definition_t xCommandDef_rakSend;
+extern const CLI_Command_Definition_t xCommandDef_rakAT;
+extern const CLI_Command_Definition_t xCommandDef_rakReset;
 
 #endif /* _CLI_PRIV */

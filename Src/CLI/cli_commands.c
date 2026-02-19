@@ -16,76 +16,73 @@ static void prvPsCommand(ConsoleIO_t * const pxConsoleIO,
     volatile UBaseType_t uxArraySize, x;
     unsigned long ulTotalRunTime, ulStatsAsPercentage;
 
-    /* Get number of tasks */
     uxArraySize = uxTaskGetNumberOfTasks();
-
-    /* Allocate array for task status */
     pxTaskStatusArray = pvPortMalloc(uxArraySize * sizeof(TaskStatus_t));
 
     if(pxTaskStatusArray != NULL)
     {
-        /* Get task information */
         uxArraySize = uxTaskGetSystemState(pxTaskStatusArray, uxArraySize, &ulTotalRunTime);
 
-        /* Avoid divide by zero */
         if(ulTotalRunTime > 0)
         {
-            pxConsoleIO->print("\r\nTask Name\t\tState\tPrio\tStack\tNum\r\n");
-            pxConsoleIO->print("********************************************************\r\n");
+            pxConsoleIO->print("\nTask Name       State Prio Stack  Num   CPU%\n");
+            pxConsoleIO->print("==================================================\n");
 
-            /* For each populated position in the array */
             for(x = 0; x < uxArraySize; x++)
             {
-                /* Calculate percentage of total runtime */
                 ulStatsAsPercentage = pxTaskStatusArray[x].ulRunTimeCounter / (ulTotalRunTime / 100UL);
+
+                char cState;
+                switch(pxTaskStatusArray[x].eCurrentState)
+                {
+                    case eRunning:   cState = 'X'; break;
+                    case eReady:     cState = 'R'; break;
+                    case eBlocked:   cState = 'B'; break;
+                    case eSuspended: cState = 'S'; break;
+                    default:         cState = 'D'; break;
+                }
 
                 if(ulStatsAsPercentage > 0UL)
                 {
                     snprintf(pcBuffer, sizeof(pcBuffer),
-                            "%s\t\t%c\t%u\t%u\t%u\t%u%%\r\n",
+                            "%-15s %c     %-4u  %-5u  %-5u %3lu%%\n",
                             pxTaskStatusArray[x].pcTaskName,
-                            pxTaskStatusArray[x].eCurrentState == eRunning ? 'X' : 
-                            pxTaskStatusArray[x].eCurrentState == eReady ? 'R' : 
-                            pxTaskStatusArray[x].eCurrentState == eBlocked ? 'B' : 
-                            pxTaskStatusArray[x].eCurrentState == eSuspended ? 'S' : 'D',
-                            pxTaskStatusArray[x].uxCurrentPriority,
-                            pxTaskStatusArray[x].usStackHighWaterMark,
-                            pxTaskStatusArray[x].xTaskNumber,
+                            cState,
+                            (unsigned int)pxTaskStatusArray[x].uxCurrentPriority,
+                            (unsigned int)pxTaskStatusArray[x].usStackHighWaterMark,
+                            (unsigned int)pxTaskStatusArray[x].xTaskNumber,
                             ulStatsAsPercentage);
                 }
                 else
                 {
                     snprintf(pcBuffer, sizeof(pcBuffer),
-                            "%s\t\t%c\t%u\t%u\t%u\t<1%%\r\n",
+                            "%-15s %c     %-4u  %-5u  %-5u  <1%%\n",
                             pxTaskStatusArray[x].pcTaskName,
-                            pxTaskStatusArray[x].eCurrentState == eRunning ? 'X' : 
-                            pxTaskStatusArray[x].eCurrentState == eReady ? 'R' : 
-                            pxTaskStatusArray[x].eCurrentState == eBlocked ? 'B' : 
-                            pxTaskStatusArray[x].eCurrentState == eSuspended ? 'S' : 'D',
-                            pxTaskStatusArray[x].uxCurrentPriority,
-                            pxTaskStatusArray[x].usStackHighWaterMark,
-                            pxTaskStatusArray[x].xTaskNumber);
+                            cState,
+                            (unsigned int)pxTaskStatusArray[x].uxCurrentPriority,
+                            (unsigned int)pxTaskStatusArray[x].usStackHighWaterMark,
+                            (unsigned int)pxTaskStatusArray[x].xTaskNumber);
                 }
 
                 pxConsoleIO->print(pcBuffer);
             }
+            pxConsoleIO->print("\n");
         }
 
-        /* Free allocated memory */
         vPortFree(pxTaskStatusArray);
     }
     else
     {
-        pxConsoleIO->print("Error: Unable to allocate memory for task list\r\n");
+        pxConsoleIO->print("Error: Unable to allocate memory for task list\n");
     }
 }
 
 const CLI_Command_Definition_t xCommandDef_ps =
 {
     "ps",
-    "ps:\r\n"
-    "    List all running tasks with their status\r\n"
-    "    Usage: ps\r\n\n",
+    "ps:\n"
+    "  List all running tasks with their status\n"
+    "  Usage: ps\n\n",
     prvPsCommand
 };
 
@@ -94,20 +91,20 @@ static void prvHeapStatCommand(ConsoleIO_t * const pxConsoleIO,
                                uint32_t ulArgc,
                                char * ppcArgv[])
 {
-    char pcBuffer[128];
+    char pcBuffer[512];
     HeapStats_t xHeapStats;
 
     vPortGetHeapStats(&xHeapStats);
 
     snprintf(pcBuffer, sizeof(pcBuffer),
-            "\r\nHeap Statistics:\r\n"
-            "  Available heap space: %u bytes\r\n"
-            "  Largest free block:   %u bytes\r\n"
-            "  Smallest free block:  %u bytes\r\n"
-            "  Number of free blocks: %u\r\n"
-            "  Minimum ever free:    %u bytes\r\n"
-            "  Successful allocs:    %u\r\n"
-            "  Successful frees:     %u\r\n\n",
+            "\nHeap Statistics:\n"
+            "  Available heap space:  %6u bytes\n"
+            "  Largest free block:    %6u bytes\n"
+            "  Smallest free block:   %6u bytes\n"
+            "  Number of free blocks: %6u\n"
+            "  Minimum ever free:     %6u bytes\n"
+            "  Successful allocs:     %6u\n"
+            "  Successful frees:      %6u\n\n",
             (unsigned int)xHeapStats.xAvailableHeapSpaceInBytes,
             (unsigned int)xHeapStats.xSizeOfLargestFreeBlockInBytes,
             (unsigned int)xHeapStats.xSizeOfSmallestFreeBlockInBytes,
@@ -122,9 +119,9 @@ static void prvHeapStatCommand(ConsoleIO_t * const pxConsoleIO,
 const CLI_Command_Definition_t xCommandDef_heapStat =
 {
     "heap",
-    "heap:\r\n"
-    "    Display heap memory statistics\r\n"
-    "    Usage: heap\r\n\n",
+    "heap:\n"
+    "  Display heap memory statistics\n"
+    "  Usage: heap\n\n",
     prvHeapStatCommand
 };
 
@@ -146,9 +143,9 @@ static void prvResetCommand(ConsoleIO_t * const pxConsoleIO,
 const CLI_Command_Definition_t xCommandDef_reset =
 {
     "reset",
-    "reset:\r\n"
-    "    Reset the RP2040 microcontroller\r\n"
-    "    Usage: reset\r\n\n",
+    "reset:\n"
+    "  Reset the RP2040 microcontroller\n"
+    "  Usage: reset\n\n",
     prvResetCommand
 };
 
@@ -164,9 +161,9 @@ static void prvClearCommand(ConsoleIO_t * const pxConsoleIO,
 const CLI_Command_Definition_t xCommandDef_clear =
 {
     "clear",
-    "clear:\r\n"
-    "    Clear the terminal screen\r\n"
-    "    Usage: clear\r\n\n",
+    "clear:\n"
+    "  Clear the terminal screen\n"
+    "  Usage: clear\n\n",
     prvClearCommand
 };
 
@@ -175,7 +172,7 @@ static void prvUptimeCommand(ConsoleIO_t * const pxConsoleIO,
                              uint32_t ulArgc,
                              char * ppcArgv[])
 {
-    char pcBuffer[128];
+    char pcBuffer[256];
     TickType_t xUptime = xTaskGetTickCount();
     
     uint32_t ulSeconds = xUptime / configTICK_RATE_HZ;
@@ -188,8 +185,8 @@ static void prvUptimeCommand(ConsoleIO_t * const pxConsoleIO,
     ulHours %= 24;
     
     snprintf(pcBuffer, sizeof(pcBuffer),
-            "\r\nSystem uptime: %lu days, %lu hours, %lu minutes, %lu seconds\r\n"
-            "Total ticks: %lu\r\n\n",
+            "\nSystem uptime: %lu days, %lu hours, %lu minutes, %lu seconds\n"
+            "Total ticks: %lu\n\n",
             ulDays, ulHours, ulMinutes, ulSeconds,
             (unsigned long)xUptime);
     
@@ -199,8 +196,8 @@ static void prvUptimeCommand(ConsoleIO_t * const pxConsoleIO,
 const CLI_Command_Definition_t xCommandDef_uptime =
 {
     "uptime",
-    "uptime:\r\n"
-    "    Display system uptime\r\n"
-    "    Usage: uptime\r\n\n",
+    "uptime:\n"
+    "  Display system uptime\n"
+    "  Usage: uptime\n\n",
     prvUptimeCommand
 };

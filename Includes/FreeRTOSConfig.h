@@ -72,6 +72,9 @@
 #define configSUPPORT_PICO_SYNC_INTEROP         1
 #define configSUPPORT_PICO_TIME_INTEROP         1
 
+/* RP2040/RP2350 specific - already in your config but verify */
+#define configMAX_SYSCALL_INTERRUPT_PRIORITY    16
+
 #include <assert.h>
 /* Define to trap errors during development. */
 #define configASSERT(x) if((x) == 0) { \

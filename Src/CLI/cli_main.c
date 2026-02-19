@@ -31,13 +31,13 @@ static uint32_t prvGetNumberOfArgs(const char * pcCommandString);
 static const CLI_Command_Definition_t xHelpCommand =
 {
     "help",
-    "help:\r\n"
-    "    List available commands and their arguments.\r\n"
-    "    Usage:\r\n\n"
-    "    help\r\n"
-    "        Print help for all recognized commands\r\n\n"
-    "    help <command>\r\n"
-    "        Print help text for a specific command\r\n\n",
+    "help:\n"
+    "  List available commands and their arguments.\n"
+    "  Usage:\n\n"
+    "  help\n"
+    "    Print help for all recognized commands\n\n"
+    "  help <command>\n"
+    "    Print help text for a specific command\n\n",
     prvHelpCommand
 };
 
@@ -272,6 +272,15 @@ void Task_CLI(void *pvParameters)
     FreeRTOS_CLIRegisterCommand(&xCommandDef_heapStat);
     FreeRTOS_CLIRegisterCommand(&xCommandDef_reset);
     FreeRTOS_CLIRegisterCommand(&xCommandDef_clear);
+    FreeRTOS_CLIRegisterCommand(&xCommandDef_uptime);
+
+    /* Register RAK3172 commands */
+    FreeRTOS_CLIRegisterCommand(&xCommandDef_rakVersion);
+    FreeRTOS_CLIRegisterCommand(&xCommandDef_rakConfig);
+    FreeRTOS_CLIRegisterCommand(&xCommandDef_rakJoin);
+    FreeRTOS_CLIRegisterCommand(&xCommandDef_rakSend);
+    FreeRTOS_CLIRegisterCommand(&xCommandDef_rakAT);
+    FreeRTOS_CLIRegisterCommand(&xCommandDef_rakReset);
 
     printf("Commands registered\n");
     

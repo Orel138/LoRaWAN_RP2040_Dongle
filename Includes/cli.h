@@ -14,8 +14,8 @@
 
 #define CLI_PROMPT_STR                  "> "
 #define CLI_PROMPT_LEN                  2
-#define CLI_OUTPUT_EOL                  "\r\n"
-#define CLI_OUTPUT_EOL_LEN              2
+#define CLI_OUTPUT_EOL                  "\n"
+#define CLI_OUTPUT_EOL_LEN              1
 
 /* Task prototype */
 void Task_CLI(void *pvParameters);

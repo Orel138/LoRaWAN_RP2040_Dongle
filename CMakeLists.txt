@@ -48,9 +48,12 @@ include(FreeRTOS_Kernel_import.cmake)
 add_executable(LoRaWAN_RP2040_Dongle
     Src/main.c
     Drivers/st7789/src/st7789.c
-    Src/cli_main.c
-    Src/cli_uart_drv.c
-    Src/cli_commands.c
+    Src/graphics.c
+    Src/CLI/cli_main.c
+    Src/CLI/cli_uart_drv.c
+    Src/CLI/cli_commands.c
+    Src/CLI/cli_rak3172.c
+    Src/RAK3172/rak3172.c
 )
 
 # Add the standard library to the build
@@ -66,6 +69,8 @@ target_link_libraries(LoRaWAN_RP2040_Dongle
 # Include directories
 target_include_directories(LoRaWAN_RP2040_Dongle PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/Includes
+    ${CMAKE_CURRENT_LIST_DIR}/Includes/CLI
+    ${CMAKE_CURRENT_LIST_DIR}/Includes/RAK3172
     ${CMAKE_CURRENT_LIST_DIR}/Drivers/st7789/src/include
 )
 
